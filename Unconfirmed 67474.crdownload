@@ -1,0 +1,130 @@
+# ============================================================
+# CODTECH IT SOLUTIONS - AI INTERNSHIP
+# Intern ID   : CITS4715
+# Intern Name : Sanskruti Vijay Gulghane
+# Project     : Sentiment Analysis of Reviews
+# Domain      : Artificial Intelligence
+# Duration    : 4 Weeks (14 June 2026 - 12 July 2026)
+# ============================================================
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix)
+
+# ── 1. Create Sample Reviews Dataset ─────────────────────────
+data = {
+    'review': [
+        "This product is absolutely amazing! I love it.",
+        "Fantastic quality. Would definitely buy again.",
+        "Exceeded my expectations. Highly recommend!",
+        "Great value for money. Very satisfied.",
+        "Works perfectly. Exactly what I needed.",
+        "Superb product! Delivery was also very fast.",
+        "Very happy with this purchase. 5 stars!",
+        "Outstanding performance and great build quality.",
+        "Best product I have ever used. Truly excellent.",
+        "Loved it! My family is also very happy.",
+        "Terrible product. Broke after one day of use.",
+        "Worst purchase ever. Total waste of money.",
+        "Very disappointed. Quality is extremely poor.",
+        "Does not work as advertised. Returning it.",
+        "Horrible experience. Customer service is useless.",
+        "Cheap material and bad finish. Not worth it.",
+        "Complete waste. Stopped working after a week.",
+        "Very bad quality. Will never buy from here again.",
+        "Scam product! Do not buy this.",
+        "Extremely poor quality and late delivery.",
+        "The product is okay. Not great but not bad either.",
+        "Average quality. Expected a bit more for the price.",
+        "It works, but nothing special about it.",
+        "Decent product. Delivery was a bit delayed.",
+        "Acceptable quality. Could be improved.",
+    ],
+    'sentiment': [
+        'positive','positive','positive','positive','positive',
+        'positive','positive','positive','positive','positive',
+        'negative','negative','negative','negative','negative',
+        'negative','negative','negative','negative','negative',
+        'neutral','neutral','neutral','neutral','neutral',
+    ]
+}
+
+df = pd.DataFrame(data)
+
+print("=== Dataset Overview ===")
+print(df['sentiment'].value_counts())
+
+# ── 2. EDA – Sentiment Distribution ──────────────────────────
+plt.figure(figsize=(6, 4))
+colors = {'positive': '#6BCB77', 'negative': '#FF6B6B', 'neutral': '#FFD93D'}
+sns.countplot(data=df, x='sentiment',
+              palette=colors,
+              order=['positive', 'neutral', 'negative'])
+plt.title('Review Sentiment Distribution')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.savefig('sentiment_distribution.png', dpi=100)
+plt.close()
+print("\n[Saved] sentiment_distribution.png")
+
+# ── 3. Text Vectorization (TF-IDF) ───────────────────────────
+tfidf = TfidfVectorizer(stop_words='english', max_features=500)
+X = tfidf.fit_transform(df['review'])
+y = df['sentiment']
+
+# ── 4. Train-Test Split ───────────────────────────────────────
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)
+
+# ── 5. Model Training (Logistic Regression) ──────────────────
+model = LogisticRegression(max_iter=1000, random_state=42)
+model.fit(X_train, y_train)
+
+# ── 6. Evaluation ────────────────────────────────────────────
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"\n=== Model Accuracy: {accuracy * 100:.2f}% ===")
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# ── 7. Confusion Matrix ───────────────────────────────────────
+cm = confusion_matrix(y_test, y_pred,
+                      labels=['positive', 'neutral', 'negative'])
+plt.figure(figsize=(6, 5))
+sns.heatmap(cm, annot=True, fmt='d', cmap='YlOrRd',
+            xticklabels=['Positive', 'Neutral', 'Negative'],
+            yticklabels=['Positive', 'Neutral', 'Negative'])
+plt.title('Confusion Matrix - Sentiment Analysis')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.tight_layout()
+plt.savefig('sentiment_confusion_matrix.png', dpi=100)
+plt.close()
+print("[Saved] sentiment_confusion_matrix.png")
+
+# ── 8. Predict Custom Reviews ─────────────────────────────────
+custom_reviews = [
+    "I absolutely love this product! It is the best.",
+    "This is the worst thing I have ever bought.",
+    "The product is fine. Nothing extraordinary.",
+    "Great experience! Very fast delivery and good quality.",
+    "Not happy with the purchase. Expected much better."
+]
+
+print("\n=== Custom Review Sentiment Predictions ===")
+emoji_map = {'positive': '😊 POSITIVE', 'negative': '😠 NEGATIVE',
+             'neutral': '😐 NEUTRAL'}
+for review in custom_reviews:
+    vec  = tfidf.transform([review])
+    pred = model.predict(vec)[0]
+    print(f"\nReview   : {review[:60]}")
+    print(f"Sentiment: {emoji_map[pred]}")
